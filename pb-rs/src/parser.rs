@@ -353,6 +353,19 @@ fn message(input: &str) -> IResult<&str, Message> {
     )(input)
 }
 
+fn deprecated(input: &str) -> IResult<&str, ()> {
+    value(
+        (),
+        tuple((
+            tag("["),
+            many0(multispace1), tag("deprecated"), many0(multispace1),
+            tag("="),
+            many0(multispace1), word, many0(multispace1),
+            tag("]"),
+        )),
+    )(input)
+}
+
 fn enum_field(input: &str) -> IResult<&str, (String, i32)> {
     terminated(
         separated_pair(
@@ -360,7 +373,7 @@ fn enum_field(input: &str) -> IResult<&str, (String, i32)> {
             tuple((many0(br), tag("="), many0(br))),
             alt((hex_integer, integer)),
         ),
-        pair(many0(br), tag(";")),
+        pair(many0(alt((br, deprecated))), tag(";")),
     )(input)
 }
 
@@ -584,6 +597,46 @@ mod test {
             assert_eq!(2, mess.fields.len());
         } else {
             panic!("Could not parse reserved fields message");
+        }
+    }
+
+    #[test]
+    fn test_deprecated_msg() {
+        let msg = r#"message ReferenceData
+    {
+       uint64 a = 1 [deprecated  =    true ];
+       uint64 b = 2 [deprecated=false];
+       uint64 c = 3;
+    }"#;
+        let mess = message(msg);
+        dbg!(&mess);
+
+        match mess {
+            ::nom::IResult::Ok((_, mess)) => {
+                assert_eq!(3, mess.fields.len());
+                assert_eq!(true, mess.fields[0].deprecated);
+                assert_eq!(false, mess.fields[1].deprecated);
+                assert_eq!(false, mess.fields[2].deprecated);
+            }
+            _ => panic!("Could not parse deprecated message"),
+        }
+    }
+
+    #[test]
+    fn test_deprecated_enum() {
+        let msg = r#"enum PairingStatus {
+                DEALPAIRED        = 0;
+                INVENTORYORPHAN   = 1 [deprecated  =    true ];
+                CALCULATEDORPHAN  = 2[deprecated  =    true ];
+                CANCELED          = 3[deprecated=false];
+    }"#;
+
+        let mess = enumerator(msg);
+        match mess {
+            ::nom::IResult::Ok((_, mess)) => {
+                assert_eq!(4, mess.fields.len());
+            }
+            _ => panic!("Could not parse deprecated message"),
         }
     }
 
