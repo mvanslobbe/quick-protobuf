@@ -2200,13 +2200,13 @@ impl FileDescriptor {
         (full_msgs, full_enums)
     }
 
-    fn resolve_types(&mut self) -> Result<()> {
+    pub fn resolve_types(&mut self) -> Result<()> {
         let (full_msgs, full_enums) = self.get_full_names();
-
         fn rec_resolve_types(
             m: &mut Message,
             full_msgs: &HashMap<String, MessageIndex>,
             full_enums: &HashMap<String, EnumIndex>,
+            p: String,
         ) -> Result<()> {
             // Interestingly, we can't call all_fields_mut to iterate over the
             // fields here: writing out the field traversal as below lets Rust
@@ -2224,17 +2224,35 @@ impl FileDescriptor {
                     _ => vec![typ].into_iter(),
                 })
             {
+                fn expand_all_paths(path: String, name: String) -> Vec<String> {
+                    let parts: Vec<&str> = path.split('.').collect();
+                    let mut rv: Vec<String> = Vec::new();
+                    for i in 0..parts.len() {
+                        let mut p = parts[0..=i].join(".").to_string();
+                        p.push('.');
+                        p.push_str(&name);
+                        rv.push(p);
+                    }
+                    rv
+                }
                 if let FieldType::MessageOrEnum(name) = typ.clone() {
+                    let mut extra = expand_all_paths(p.clone(), name.clone());
                     let test_names: Vec<String> = if name.starts_with('.') {
-                        vec![name.clone().split_off(1)]
+                        let mut v = vec![name.clone().split_off(1)];
+                        v.append(&mut extra);
+                        v
                     } else if m.package.is_empty() {
-                        vec![name.clone(), format!("{}.{}", m.name, name)]
+                        let mut v = vec![name.clone(), format!("{}.{}", m.name, name)];
+                        v.append(&mut extra);
+                        v
                     } else {
-                        vec![
+                        let mut v = vec![
                             name.clone(),
                             format!("{}.{}", m.package, name),
                             format!("{}.{}.{}", m.package, m.name, name),
-                        ]
+                        ];
+                        v.append(&mut extra);
+                        v
                     };
                     for name in &test_names {
                         if let Some(msg) = full_msgs.get(&*name) {
@@ -2249,13 +2267,13 @@ impl FileDescriptor {
                 }
             }
             for m in m.messages.iter_mut() {
-                rec_resolve_types(m, full_msgs, full_enums)?;
+                rec_resolve_types(m, full_msgs, full_enums, p.clone())?;
             }
             Ok(())
         }
 
         for m in self.messages.iter_mut() {
-            rec_resolve_types(m, &full_msgs, &full_enums)?;
+            rec_resolve_types(m, &full_msgs, &full_enums, self.package.clone())?;
         }
         Ok(())
     }
