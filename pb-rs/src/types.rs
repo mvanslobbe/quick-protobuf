@@ -1275,6 +1275,11 @@ impl Message {
     }
 
     fn write_get_size<W: Write>(&self, w: &mut W, desc: &FileDescriptor, config: &Config) -> Result<()> {
+        // clippy doesn't like what we do here: size = 0 + .. something
+        // and suggests we make it .. something. fixing that causes other problems
+        // and we're not going down that rabbit hole now
+        writeln!(w, "    #![allow(clippy)]")?;
+        writeln!(w, "    #![allow(warnings)]")?;
         writeln!(w, "    fn get_size(&self) -> usize {{")?;
         writeln!(w, "        0")?;
         for f in &self.fields {
