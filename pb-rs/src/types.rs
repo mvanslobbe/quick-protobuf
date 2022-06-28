@@ -582,7 +582,6 @@ impl Field {
             return Ok(());
         }
 
-        write!(w, "        + ")?;
         let tag_size = sizeof_varint(self.tag());
         match self.frequency {
             Frequency::Optional
@@ -1276,8 +1275,13 @@ impl Message {
 
     fn write_get_size<W: Write>(&self, w: &mut W, desc: &FileDescriptor, config: &Config) -> Result<()> {
         writeln!(w, "    fn get_size(&self) -> usize {{")?;
-        writeln!(w, "        0")?;
+        let mut first : bool = false;
         for f in &self.fields {
+            if !first {
+                first = true;
+            } else {
+                write!(w, " + ")?;
+            }
             f.write_get_size(w, desc, config)?;
         }
         for o in self.oneofs.iter() {
