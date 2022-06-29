@@ -1063,6 +1063,8 @@ impl Message {
     ) -> Result<()> {
         if self.is_unit() {
             writeln!(w, "impl<'a> MessageRead<'a> for {} {{", self.name)?;
+            writeln!(w, "    #![allow(clippy)]")?;
+            writeln!(w, "    #![allow(warnings)]")?;
             writeln!(
                 w,
                 "    fn from_reader(r: &mut BytesReader, _: &[u8]) -> Result<Self> {{"
@@ -1080,12 +1082,16 @@ impl Message {
         }
         if self.has_lifetime(desc, &mut ignore) {
             writeln!(w, "impl<'a> MessageRead<'a> for {}<'a> {{", self.name)?;
+            writeln!(w, "    #![allow(clippy)]")?;
+            writeln!(w, "    #![allow(warnings)]")?;
             writeln!(
                 w,
                 "    fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {{"
             )?;
         } else {
             writeln!(w, "impl<'a> MessageRead<'a> for {} {{", self.name)?;
+            writeln!(w, "    #![allow(clippy)]")?;
+            writeln!(w, "    #![allow(warnings)]")?;
             writeln!(
                 w,
                 "    fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {{"
