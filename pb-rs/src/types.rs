@@ -1063,7 +1063,9 @@ impl Message {
     ) -> Result<()> {
         if self.is_unit() {
             writeln!(w, "impl<'a> MessageRead<'a> for {} {{", self.name)?;
-            writeln!(w, "    #![allow(clippy)]")?;
+            writeln!(w, "    #![allow(clippy::deref_addrof)]")?;
+            writeln!(w, "    #![allow(clippy::identity_op)]")?;
+            writeln!(w, "    #![allow(clippy::needless_update)]")?;
             writeln!(w, "    #![allow(warnings)]")?;
             writeln!(
                 w,
@@ -1082,7 +1084,9 @@ impl Message {
         }
         if self.has_lifetime(desc, &mut ignore) {
             writeln!(w, "impl<'a> MessageRead<'a> for {}<'a> {{", self.name)?;
-            writeln!(w, "    #![allow(clippy)]")?;
+            writeln!(w, "    #![allow(clippy::deref_addrof)]")?;
+            writeln!(w, "    #![allow(clippy::identity_op)]")?;
+            writeln!(w, "    #![allow(clippy::needless_update)]")?;
             writeln!(w, "    #![allow(warnings)]")?;
             writeln!(
                 w,
@@ -1090,7 +1094,9 @@ impl Message {
             )?;
         } else {
             writeln!(w, "impl<'a> MessageRead<'a> for {} {{", self.name)?;
-            writeln!(w, "    #![allow(clippy)]")?;
+            writeln!(w, "    #![allow(clippy::deref_addrof)]")?;
+            writeln!(w, "    #![allow(clippy::identity_op)]")?;
+            writeln!(w, "    #![allow(clippy::needless_update)]")?;
             writeln!(w, "    #![allow(warnings)]")?;
             writeln!(
                 w,
@@ -1284,7 +1290,9 @@ impl Message {
         // clippy doesn't like what we do here: size = 0 + .. something
         // and suggests we make it .. something. fixing that causes other problems
         // and we're not going down that rabbit hole now
-        writeln!(w, "    #![allow(clippy)]")?;
+        writeln!(w, "    #![allow(clippy::deref_addrof)]")?;
+        writeln!(w, "    #![allow(clippy::identity_op)]")?;
+        writeln!(w, "    #![allow(clippy::needless_update)]")?;
         writeln!(w, "    #![allow(warnings)]")?;
         writeln!(w, "    fn get_size(&self) -> usize {{")?;
         writeln!(w, "        0")?;
